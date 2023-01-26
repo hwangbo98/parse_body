@@ -23,8 +23,8 @@ def detect(save_img=False):
 
     # Directories
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
-    (save_dir / 'labels').mkdir(parents=True, exist_ok=True)
-    (save_dir/ 'images').mkdir(parents=True, exist_ok=True) 
+    # (save_dir / 'labels').mkdir(parents=True, exist_ok=True)
+    # (save_dir/ 'images').mkdir(parents=True, exist_ok=True) 
     # (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
     # Initialize
@@ -37,8 +37,8 @@ def detect(save_img=False):
     stride = int(model.stride.max())  # model stride
     imgsz = check_img_size(imgsz, s=stride)  # check img_size
 
-    if trace:
-        model = TracedModel(model, device, opt.img_size)
+    # if trace:
+    #     model = TracedModel(model, device, opt.img_size)
 
     if half:
         model.half()  # to FP16
@@ -269,10 +269,71 @@ def detect(save_img=False):
                 #     json.dump(iteminfo, f)
                 # print(f'Top = {top}, Bottom = {bottom}, shoes = {shoes}')
                 print(result)
+                final_result = {}
                 
+                #check if it is exist 
+                if len(result['top']) > 1 :
+                    top_size = 0
+                    top_idx = 0
+                    for k, top_value in enumerate(result['top']) :
+                        area = (top_value[2] - top_value[0]) * (top_value[3] - top_value[1])
+                        if area >= top_size :
+                            top_size = area
+                            top_idx = k
+                    final_result['top'] = result['top'][top_idx]
+                elif len(result['top']) == 1 :
+                    final_result['top'] = result['top']
+                else :
+                    final_result['top'] = [-1,-1,-1,-1]
+
+                if len(result['bottom']) > 1 :
+                    bottom_size = 0
+                    bottom_idx = 0
+                    for k, bottom_value in enumerate(result['bottom']) :
+                        area = (bottom_value[2] - bottom_value[0]) * (bottom_value[3] - bottom_value[1])
+                        if area >= bottom_size :
+                            bottom_size = area
+                            bottom_idx = k
+
+                    final_result['bottom'] = result['bottom'][top_idx]
+                elif len(result['bottom']) == 1 :
+                    final_result['bottom'] = result['bottom']
+                else :
+                    final_result['bottom'] = [-1,-1,-1,-1]
+
+                if len(result['shoes']) > 1 :
+                    shoes_size = 0
+                    shoes_idx = 0
+                    for k, shoes_value in enumerate(result['shoes']) :
+                        area = (shoes_value[2] - shoes_value[0]) * (shoes_value[3] - shoes_value[1])
+                        if area >= shoes_size :
+                            shoes_size = area
+                            shoes_idx = k
+
+                    final_result['shoes'] = result['shoes'][top_idx]
+                elif len(result['shoes']) == 1 :
+                    final_result['shoes'] = result['shoes']
+                else :
+                    final_result['shoes'] = [-1,-1,-1,-1]
+
+                if len(result['head']) > 1 :
+                    shoes_size = 0
+                    head_idx = 0
+                    for k, head_value in enumerate(result['head']) :
+                        area = (head_value[2] - head_value[0]) * (head_value[3] - head_value[1])
+                        if area >= head_size :
+                            head_size = area
+                            head_idx = k
+
+                    final_result['head'] = result['head'][top_idx]
+                elif len(result['head']) == 1 :
+                    final_result['head'] = result['head']
+                else :
+                    final_result['head'] = [-1,-1,-1,-1]
                 # for k, top_cl in enumerate(top) :
                 #     top_
 
+            print(f'final_result = {final_result}')
             # Print time (inference + NMS)
             print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
 
